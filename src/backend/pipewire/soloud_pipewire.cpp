@@ -119,12 +119,6 @@ namespace SoLoud
                     m_PipewireLoop = nullptr;
                 }
 
-                if(m_PipewirePlaybackProperties)
-                {
-                    pw_properties_free(m_PipewirePlaybackProperties);
-                    m_PipewirePlaybackProperties = nullptr;
-                }
-
                 m_PODParameters[0] = nullptr;
 
                 return true;
