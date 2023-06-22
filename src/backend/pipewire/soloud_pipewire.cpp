@@ -158,8 +158,8 @@ namespace SoLoud
 
                 if ((pipewireBuffer = pw_stream_dequeue_buffer(soloudPipewireState->m_OutputAudioStream)) == NULL)
                 {
-                        pw_log_warn("out of buffers: %m");
-                        return;
+                    pw_log_warn("out of buffers: %m");
+                    return;
                 }
 
                 if ((destinationBuffer = reinterpret_cast<float*>(pipewireBuffer->buffer->datas[0].data)) == NULL)
