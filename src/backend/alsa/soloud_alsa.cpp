@@ -30,9 +30,9 @@ freely, subject to the following restrictions:
 namespace SoLoud
 {
     result alsa_init(Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
-	{
-		return NOT_IMPLEMENTED;
-	}
+    {
+        return NOT_IMPLEMENTED;
+    }
 };
 
 #else
@@ -48,34 +48,34 @@ namespace SoLoud
 {
     struct ALSAData
     {
-        float *buffer;
-        short *sampleBuffer;
-        snd_pcm_t *alsaDeviceHandle;
-        Soloud *soloud;
-        int samples;
-        int channels;
-        bool audioProcessingDone;
+        float *buffer = NULL;
+        short *sampleBuffer = NULL;
+        snd_pcm_t *alsaDeviceHandle = NULL;
+        Soloud *soloud = NULL;
+        int samples = 0;
+        int channels = 0;
+        bool audioProcessingDone = false;
         Thread::ThreadHandle threadHandle;
     };
 
 
     static void alsaThread(void *aParam)
     {
-        
         ALSAData *data = static_cast<ALSAData*>(aParam);
-        while (!data->audioProcessingDone) 
-        {            
-            data->soloud->mix(data->buffer, data->samples);            
+        while (!data->audioProcessingDone)
+        {
+            data->soloud->mix(data->buffer, data->samples);
             for (int i=0;i<data->samples*data->channels;++i)
             {
-                data->sampleBuffer[i] = static_cast<short>(floor(data->buffer[i] 
+                data->sampleBuffer[i] = static_cast<short>(floor(data->buffer[i]
                                                           * static_cast<float>(0x7fff)));
             }
+
+            snd_pcm_wait(data->alsaDeviceHandle, -1);
             if (snd_pcm_writei(data->alsaDeviceHandle, data->sampleBuffer, data->samples) == -EPIPE)
                 snd_pcm_prepare(data->alsaDeviceHandle);
-                
         }
-        
+
     }
 
     static void alsaCleanup(Soloud *aSoloud)
@@ -108,11 +108,10 @@ namespace SoLoud
     result alsa_init(Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
     {
         ALSAData *data = new ALSAData;
-        memset(data, 0, sizeof(ALSAData));
         aSoloud->mBackendData = data;
         aSoloud->mBackendCleanupFunc = alsaCleanup;
         data->samples = aBuffer;
-        data->channels = 2;
+        data->channels = aChannels;
         data->soloud = aSoloud;
 
         int rc;
@@ -122,18 +121,18 @@ namespace SoLoud
         {
             return UNKNOWN_ERROR;
         }
-        
+
         data->alsaDeviceHandle = handle;
-        
+
         snd_pcm_hw_params_t *params;
         snd_pcm_hw_params_alloca(&params);
         snd_pcm_hw_params_any(handle, params);
 
         snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
         snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-        snd_pcm_hw_params_set_channels(handle, params, 2);
+        snd_pcm_hw_params_set_channels(handle, params, aChannels);
         snd_pcm_hw_params_set_buffer_size(handle, params, aBuffer);
-        
+
         unsigned int val = aSamplerate;
         int dir = 0;
         rc = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
@@ -143,7 +142,7 @@ namespace SoLoud
         }
 
         rc = snd_pcm_hw_params(handle, params);
-        if (rc < 0) 
+        if (rc < 0)
         {
             return UNKNOWN_ERROR;
         }
@@ -155,7 +154,7 @@ namespace SoLoud
 
         data->buffer = new float[data->samples*data->channels];
         data->sampleBuffer = new short[data->samples*data->channels];
-        aSoloud->postinit_internal(aSamplerate, data->samples * data->channels, aFlags, 2);
+        aSoloud->postinit(aSamplerate, data->samples * data->channels, aFlags, 2);
         data->threadHandle = Thread::createThread(alsaThread, data);
         if (0 == data->threadHandle)
         {
