@@ -77,6 +77,8 @@ set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_wav.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_waveshaperfilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_wavstream.h
+	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_misc.h
+	${SOLOUD_CORE_SOURCE_DIR}/soloud_misc.cpp
 )
 source_group ("Core" FILES ${SOLOUD_CORE_SOURCES})
 list(APPEND SOLOUD_SOURCES ${SOLOUD_CORE_SOURCES})
@@ -104,6 +106,16 @@ set(SOLOUD_AUDIOSOURCES_SOURCES
 	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_wav.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_wavstream.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/wav/stb_vorbis.c
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/chipplayer.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/chipplayer.h
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndbuffer.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndbuffer.h
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndchip.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndchip.h
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndrender.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndrender.h
+	${SOLOUD_AUDIOSOURCES_DIR}/ay/soloud_ay.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/noise/soloud_noise.cpp
 )
 source_group ("AudioSources" FILES ${SOLOUD_AUDIOSOURCES_SOURCES})
 list(APPEND SOLOUD_SOURCES ${SOLOUD_AUDIOSOURCES_SOURCES})
@@ -131,7 +143,7 @@ list(APPEND SOLOUD_SOURCES ${SOLOUD_FILTERS_SOURCES})
 ############################################
 set(SOLOUD_C_API_SOURCE_DIR ${SOLOUD_SOURCE_PATH_DIR}/c_api)
 set(SOLOUD_C_API_SOURCES
-	${SOLOUD_C_API_SOURCE_DIR}/soloud_c.cpp
+        #${SOLOUD_C_API_SOURCE_DIR}/soloud_c.cpp
 	)
 source_group("C API" FILES ${SOLOUD_C_API_SOURCES})
 list(APPEND SOLOUD_SOURCES ${SOLOUD_C_API_SOURCES})

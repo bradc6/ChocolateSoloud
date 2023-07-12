@@ -217,7 +217,7 @@ namespace SoLoud
         s_PipewireState.SetDesiredBufferSize(aBuffer);
         s_PipewireState.SetOutputStream(aChannels, aSamplerate);
 
-        aSoloud->postinit(aSamplerate, aBuffer * aChannels, aFlags, aChannels);
+        aSoloud->postinit_internal(aSamplerate, aBuffer * aChannels, aFlags, aChannels);
         aSoloud->mBackendCleanupFunc = pipewire_init_deinit;
         aSoloud->mBackendString = "Pipewire";
         //aSoloud->mBackendData;
