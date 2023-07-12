@@ -154,69 +154,65 @@ list(APPEND SOLOUD_SOURCES ${SOLOUD_C_API_SOURCES})
 set(SOLOUD_BACKENDS_SOURCE_DIR ${SOLOUD_SOURCE_PATH_DIR}/backend)
 set(SOLOUD_BACKENDS_SOURCES)
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/null/soloud_null.cpp)
 if(SOLOUD_ENABLE_BACKEND_NULL)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/null/soloud_null.cpp)
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_NULL=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/sdl2_static/soloud_sdl2_static.cpp)
 if(SOLOUD_ENABLE_BACKEND_SDL2)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/sdl2_static/soloud_sdl2_static.cpp)
-
 	find_package (SDL2 REQUIRED)
 	apply_to_soloud_libraries(target_include_directories PUBLIC ${SDL2_INCLUDE_DIR})
 	apply_to_soloud_libraries(target_link_libraries PUBLIC ${SDL2_LIBRARY})
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_SDL2_STATIC=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/alsa/soloud_alsa.cpp)
 if(SOLOUD_ENABLE_BACKEND_ALSA)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/alsa/soloud_alsa.cpp)
-
 	find_package(ALSA REQUIRED)
 	apply_to_soloud_libraries(target_include_directories PUBLIC ${ALSA_INCLUDE_DIRS})
 	apply_to_soloud_libraries(target_link_libraries PUBLIC ${ALSA_LIBRARIES})
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_ALSA=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/pipewire/soloud_pipewire.cpp)
 if(SOLOUD_ENABLE_BACKEND_PIPEWIRE)
-    list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/pipewire/soloud_pipewire.cpp)
 
     find_package(PipeWire REQUIRED)
     apply_to_soloud_libraries(target_link_libraries PUBLIC PipeWire::PipeWire)
     apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_PIPEWIRE=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/coreaudio/soloud_coreaudio.cpp)
 if (SOLOUD_ENABLE_BACKEND_COREAUDIO)
 	if(NOT APPLE)
 		message(FATAL_ERROR "CoreAudio backend can be enabled only on Apple!")
 	endif()
-
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/coreaudio/soloud_coreaudio.cpp)
 
 	find_library (AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
 	apply_to_soloud_libraries(target_link_libraries PUBLIC ${AUDIOTOOLBOX_FRAMEWORK})
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_COREAUDIO=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/opensles/soloud_opensles.cpp)
 if (SOLOUD_ENABLE_BACKEND_OPENSLES)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/opensles/soloud_opensles.cpp)
-
 	find_library (OPENSLES_LIBRARY OpenSLES)
 	apply_to_soloud_libraries(target_link_libraries PUBLIC ${OPENSLES_LIBRARY})
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_OPENSLES=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/xaudio2/soloud_xaudio2.cpp)
 if (SOLOUD_ENABLE_BACKEND_XAUDIO2)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/xaudio2/soloud_xaudio2.cpp)
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_XAUDIO2=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/winmm/soloud_winmm.cpp)
 if (SOLOUD_ENABLE_BACKEND_WINMM)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/winmm/soloud_winmm.cpp)
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_WINMM=1)
 endif()
 
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/wasapi/soloud_wasapi.cpp)
 if (SOLOUD_ENABLE_BACKEND_WASAPI)
-	list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/wasapi/soloud_wasapi.cpp)
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_WASAPI=1)
 endif()
 
