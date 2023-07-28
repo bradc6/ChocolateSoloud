@@ -26,7 +26,7 @@ freely, subject to the following restrictions:
 
 namespace SoLoud
 {
-	enum SOLOUD_ERRORS
+    enum SOLOUD_ERRORCODE : int
 	{
 		SO_NO_ERROR       = 0, // No error
 		INVALID_PARAMETER = 1, // Some parameter is invalid

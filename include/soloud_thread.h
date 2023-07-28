@@ -36,7 +36,7 @@ namespace SoLoud
         struct ThreadHandleData;
         typedef ThreadHandleData* ThreadHandle;
 
-		void * createMutex();
+        void* createMutex();
 		void destroyMutex(void *aHandle);
 		void lockMutex(void *aHandle);
 		void unlockMutex(void *aHandle);
@@ -48,7 +48,7 @@ namespace SoLoud
         void release(ThreadHandle aThreadHandle);
 		int getTimeMillis();
 
-#define MAX_THREADPOOL_TASKS 1024
+        constexpr unsigned int MAX_THREADPOOL_TASKS = 1024;
 
 		class PoolTask
 		{
