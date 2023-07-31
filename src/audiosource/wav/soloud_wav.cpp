@@ -25,13 +25,16 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "soloud.h"
 #include "soloud_wav.h"
 #include "soloud_file.h"
-#include "stb_vorbis.h"
-#include "dr_mp3.h"
-#include "dr_wav.h"
-#include "dr_flac.h"
+#include "soloud_threaded_loader.h"
+
+#include "codecs/stb_vorbis.h"
+#include "codecs/dr_mp3.h"
+#include "codecs/dr_wav.h"
+#include "codecs/dr_flac.h"
 
 namespace SoLoud
 {
@@ -43,7 +46,7 @@ namespace SoLoud
 
 	unsigned int WavInstance::getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize)
 	{		
-		if (mParent->mData == nullptr)
+        if (mParent->mData == nullptr || !mParent->mDataIsLoaded)
 			return 0;
 
 		unsigned int dataleft = mParent->mSampleCount - mOffset;
@@ -67,13 +70,13 @@ namespace SoLoud
 		return 0;
 	}
 
-	bool WavInstance::hasEnded()
+    bool WavInstance::hasEnded()
 	{
 		if (!(mFlags & AudioSourceInstance::LOOPING) && mOffset >= mParent->mSampleCount)
 		{
-			return 1;
+            return true;
 		}
-		return 0;
+        return false;
 	}
 
 	Wav::~Wav()
@@ -286,17 +289,34 @@ namespace SoLoud
 
     SOLOUD_ERRORCODE Wav::load(const char *aFilename)
 	{
-		if (aFilename == 0)
+        if (aFilename == nullptr)
 			return INVALID_PARAMETER;
 
-		stop();
-		DiskFile dr;
-        SOLOUD_ERRORCODE res = static_cast<SOLOUD_ERRORCODE>(dr.open(aFilename));
-		if (res == SO_NO_ERROR)
-			return loadFile(&dr);
+        stop();
+        SOLOUD_ERRORCODE res{SO_NO_ERROR};
+#if !SOLOUD_FEATURE_THREADED_LOADER
+        res = internalLoad(aFilename);
+#else
+        ThreadedAssetLoader* loaderInstance = ThreadedAssetLoader::GetInstance();
+        loaderInstance->AddWavToLoad(this, aFilename);
+#endif
 
 		return res;
 	}
+
+    SOLOUD_ERRORCODE Wav::internalLoad(const char *aFilename)
+    {
+        SOLOUD_ERRORCODE res{SO_NO_ERROR};
+        DiskFile dr;
+        res = static_cast<SOLOUD_ERRORCODE>(dr.open(aFilename));
+        if (res == SO_NO_ERROR)
+        {
+            res = loadFile(dr);
+            mDataIsLoaded = (res == SO_NO_ERROR);
+        }
+
+        return res;
+    }
 
     SOLOUD_ERRORCODE Wav::loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
@@ -309,14 +329,12 @@ namespace SoLoud
 		return testAndLoadFile(&dr);
 	}
 
-    SOLOUD_ERRORCODE Wav::loadFile(File *aFile)
+    SOLOUD_ERRORCODE Wav::loadFile(File &aFile)
 	{
-		if (!aFile)
-			return INVALID_PARAMETER;
 		stop();
 
 		MemoryFile mr;
-        SOLOUD_ERRORCODE res = static_cast<SOLOUD_ERRORCODE>(mr.openFileToMem(aFile));
+        SOLOUD_ERRORCODE res = static_cast<SOLOUD_ERRORCODE>(mr.openFileToMem(&aFile));
 
 		if (res != SO_NO_ERROR)
 		{

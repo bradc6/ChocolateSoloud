@@ -355,7 +355,6 @@ namespace SoLoud
 	unsigned int Soloud::getBackendId()
 	{
 		return mBackendID;
-
 	}
 
 	// Returns current backend string

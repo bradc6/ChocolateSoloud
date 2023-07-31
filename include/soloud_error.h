@@ -24,6 +24,26 @@ freely, subject to the following restrictions:
 #ifndef SOLOUD_ERROR_H
 #define SOLOUD_ERROR_H
 
+#ifdef SOLOUD_NO_ASSERTS
+#define SOLOUD_ASSERT(x)
+#else
+#ifdef _MSC_VER
+#include <stdio.h> // for sprintf in asserts
+#ifndef VC_EXTRALEAN
+#define VC_EXTRALEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h> // only needed for OutputDebugStringA, should be solved somehow.
+#define SOLOUD_ASSERT(x) if (!(x)) { char temp[200]; sprintf(temp, "%s(%d): assert(%s) failed.\n", __FILE__, __LINE__, #x); OutputDebugStringA(temp); __debugbreak(); }
+#else
+#include <assert.h> // assert
+#define SOLOUD_ASSERT(x) assert(x)
+#define SOLOUD_ASSERT_MESSAGE(x, m) SOLOUD_ASSERT(x)
+#endif
+#endif
+
 namespace SoLoud
 {
     enum SOLOUD_ERRORCODE : int
@@ -37,5 +57,8 @@ namespace SoLoud
 		NOT_IMPLEMENTED   = 6, // Feature not implemented
 		UNKNOWN_ERROR     = 7  // Other error
 	};
+
+    // Translate error number to an asciiz string
+    const char * getErrorString(SOLOUD_ERRORCODE aErrorCode);
 };
 #endif

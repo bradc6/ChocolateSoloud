@@ -71,8 +71,7 @@ namespace SoLoud
 		mFlags = 0;
 		mPan = 0;
 		// Default all volumes to 1.0 so sound behind N mix busses isn't super quiet.
-		int i;
-		for (i = 0; i < MAX_CHANNELS; i++)
+        for (int i = 0; i < MAX_CHANNELS; i++)
 			mChannelVolume[i] = 1.0f;		
 		mSetVolume = 1.0f;
 		mBaseSamplerate = 44100.0f;
@@ -86,11 +85,11 @@ namespace SoLoud
 		mBusHandle = ~0u;
 		mLoopCount = 0;
 		mLoopPoint = 0;
-		for (i = 0; i < FILTERS_PER_STREAM; i++)
+        for (int i = 0; i < FILTERS_PER_STREAM; i++)
 		{
 			mFilter[i] = NULL;
 		}
-		for (i = 0; i < MAX_CHANNELS; i++)
+        for (int i = 0; i < MAX_CHANNELS; i++)
 		{
 			mCurrentChannelVolume[i] = 0;
 		}

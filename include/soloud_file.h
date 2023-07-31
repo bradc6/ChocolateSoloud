@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 #define SOLOUD_FILE_H
 
 #include <stdio.h>
+#include <cstdint>
 #include "soloud.h"
 
 typedef void* Soloud_Filehack;
@@ -36,9 +37,9 @@ namespace SoLoud
 	{
 	public:
 		virtual ~File() {}
-		unsigned int read8();
-		unsigned int read16();
-		unsigned int read32();
+        uint8_t read8();
+        uint16_t read16();
+        uint32_t read32();
 		virtual int eof() = 0;
 		virtual unsigned int read(unsigned char *aDst, unsigned int aBytes) = 0;
 		virtual unsigned int length() = 0;

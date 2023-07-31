@@ -25,27 +25,11 @@ freely, subject to the following restrictions:
 #ifndef SOLOUD_H
 #define SOLOUD_H
 
+#include "soloud_config.h"
+
 #include <stdlib.h> // rand
 #include <math.h> // sin
 
-#ifdef SOLOUD_NO_ASSERTS
-#define SOLOUD_ASSERT(x)
-#else
-#ifdef _MSC_VER
-#include <stdio.h> // for sprintf in asserts
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h> // only needed for OutputDebugStringA, should be solved somehow.
-#define SOLOUD_ASSERT(x) if (!(x)) { char temp[200]; sprintf(temp, "%s(%d): assert(%s) failed.\n", __FILE__, __LINE__, #x); OutputDebugStringA(temp); __debugbreak(); }
-#else
-#include <assert.h> // assert
-#define SOLOUD_ASSERT(x) assert(x)
-#endif
-#endif
 
 #ifdef WITH_SDL
 #undef WITH_SDL2
@@ -67,29 +51,23 @@ freely, subject to the following restrictions:
 #define WINDOWS_VERSION
 #endif
 
-#if !defined(DISABLE_SIMD)
-#if defined(__x86_64__) || defined( _M_X64 ) || defined( __i386 ) || defined( _M_IX86 )
-#define SOLOUD_SSE_INTRINSICS
-#endif
-#endif
 
-#define SOLOUD_VERSION 202002
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
 // Configuration defines
 
 // Maximum number of filters per stream
-#define FILTERS_PER_STREAM 8
+constexpr int FILTERS_PER_STREAM = 8;
 
 // Number of samples to process on one go
-#define SAMPLE_GRANULARITY 512
+constexpr int SAMPLE_GRANULARITY = 512;
 
 // Maximum number of concurrent voices (hard limit is 4095)
-#define VOICE_COUNT 1024
+constexpr int VOICE_COUNT = 1024;
 
 // 1)mono, 2)stereo 4)quad 6)5.1 8)7.1
-#define MAX_CHANNELS 8
+constexpr int MAX_CHANNELS = 8;
 
 // Default resampler for both main and bus mixers
 #define SOLOUD_DEFAULT_RESAMPLER SoLoud::Soloud::RESAMPLER_LINEAR
@@ -238,9 +216,6 @@ namespace SoLoud
 
 		// Query SoLoud version number (should equal to SOLOUD_VERSION macro)
 		unsigned int getVersion() const;
-
-		// Translate error number to an asciiz string
-		const char * getErrorString(result aErrorCode) const;
 
 		// Returns current backend ID (BACKENDS enum)
 		unsigned int getBackendId();

@@ -26,12 +26,12 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdlib.h>
 #include "soloud.h"
-#include "dr_flac.h"
-#include "dr_mp3.h"
-#include "dr_wav.h"
+#include "codecs/dr_flac.h"
+#include "codecs/dr_mp3.h"
+#include "codecs/dr_wav.h"
 #include "soloud_wavstream.h"
 #include "soloud_file.h"
-#include "stb_vorbis.h"
+#include "codecs/stb_vorbis.h"
 
 namespace SoLoud
 {
@@ -233,8 +233,7 @@ namespace SoLoud
 			samples = aFrameSize - aFrameOffset;
 		}
 
-		int i;
-		for (i = 0; i < aChannels; i++)
+        for (int i = 0; i < aChannels; i++)
 		{
 			memcpy(aBuffer + aPitch * i, aOggOutputs[i] + aFrameOffset, sizeof(float) * samples);
 		}

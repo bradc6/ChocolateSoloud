@@ -94,8 +94,7 @@ namespace SoLoud
 	void Soloud::setPauseAll(bool aPause)
 	{
 		lockAudioMutex_internal();
-		int ch;
-		for (ch = 0; ch < (signed)mHighestVoice; ch++)
+        for (int ch = 0; ch < (signed)mHighestVoice; ch++)
 		{
 			setVoicePause_internal(ch, aPause);
 		}

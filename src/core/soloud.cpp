@@ -26,12 +26,15 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <math.h> // sin
 #include <float.h> // _controlfp
+
+#include "soloud_config.h"
 #include "soloud_internal.h"
 #include "soloud_thread.h"
 #include "soloud_fft.h"
 
+#include "audiosource/wav/soloud_threaded_loader.h"
 
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 #include <xmmintrin.h>
 #ifdef _M_IX86
 #include <emmintrin.h>
@@ -66,7 +69,7 @@ namespace SoLoud
 		mBasePtr = 0;
 		mData = 0;
 		mFloats = aFloats;
-#ifndef SOLOUD_SSE_INTRINSICS
+#if !SOLOUD_SSE_INTRINSICS
 		mBasePtr = new unsigned char[aFloats * sizeof(float)];
 		if (mBasePtr == NULL)
 			return OUT_OF_MEMORY;
@@ -126,25 +129,26 @@ namespace SoLoud
 		mBackendID = 0;
 		mActiveVoiceDirty = true;
 		mActiveVoiceCount = 0;
-		int i;
-		for (i = 0; i < VOICE_COUNT; i++)
+
+        for (int i = 0; i < VOICE_COUNT; i++)
 			mActiveVoice[i] = 0;
-		for (i = 0; i < FILTERS_PER_STREAM; i++)
+
+        for (int i = 0; i < FILTERS_PER_STREAM; i++)
 		{
 			mFilter[i] = NULL;
 			mFilterInstance[i] = NULL;
 		}
-		for (i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
 		{
 			mFFTData[i] = 0;
 			mVisualizationWaveData[i] = 0;
 			mWaveData[i] = 0;
 		}
-		for (i = 0; i < MAX_CHANNELS; i++)
+        for (int i = 0; i < MAX_CHANNELS; i++)
 		{
 			mVisualizationChannelVolume[i] = 0;
 		}
-		for (i = 0; i < VOICE_COUNT; i++)
+        for (int i = 0; i < VOICE_COUNT; i++)
 		{
 			mVoice[i] = 0;
 		}
@@ -168,7 +172,7 @@ namespace SoLoud
 		mHighestVoice = 0;
 		mResampleData = NULL;
 		mResampleDataOwner = NULL;
-		for (i = 0; i < 3 * MAX_CHANNELS; i++)
+        for (int i = 0; i < 3 * MAX_CHANNELS; i++)
 			m3dSpeakerPosition[i] = 0;
 	}
 
@@ -191,6 +195,9 @@ namespace SoLoud
 
 	void Soloud::deinit()
 	{
+#if SOLOUD_FEATURE_THREADED_LOADER
+        ThreadedAssetLoader::Destroy();
+#endif
 		// Make sure no audio operation is currently pending
 		lockAudioMutex_internal();
 		unlockAudioMutex_internal();
@@ -584,6 +591,10 @@ namespace SoLoud
 		}
 #endif
 
+#if SOLOUD_FEATURE_THREADED_LOADER
+        ThreadedAssetLoader::Initialize();
+#endif
+
 		if (!inited && aBackend != Soloud::AUTO)
 			return NOT_IMPLEMENTED;
 		if (!inited)
@@ -722,23 +733,6 @@ namespace SoLoud
 		}
 	}
 
-	const char * Soloud::getErrorString(result aErrorCode) const
-	{
-		switch (aErrorCode)
-		{
-		case SO_NO_ERROR: return "No error";
-		case INVALID_PARAMETER: return "Some parameter is invalid";
-		case FILE_NOT_FOUND: return "File not found";
-		case FILE_LOAD_FAILED: return "File found, but could not be loaded";
-		case DLL_NOT_FOUND: return "DLL not found, or wrong DLL";
-		case OUT_OF_MEMORY: return "Out of memory";
-		case NOT_IMPLEMENTED: return "Feature not implemented";
-		/*case UNKNOWN_ERROR: return "Other error";*/
-		}
-		return "Other error";
-	}
-
-
 	float * Soloud::getWave()
 	{
 		int i;
@@ -787,7 +781,7 @@ namespace SoLoud
 		return mFFTData;
 	}
 
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 	void Soloud::clip_internal(AlignedFloatBuffer &aBuffer, AlignedFloatBuffer &aDestBuffer, unsigned int aSamples, float aVolume0, float aVolume1)
 	{
 		float vd = (aVolume1 - aVolume0) / aSamples;
@@ -1072,7 +1066,7 @@ namespace SoLoud
 
 	void panAndExpand(AudioSourceInstance *aVoice, float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize, float *aScratch, unsigned int aChannels)
 	{
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 		SOLOUD_ASSERT(((size_t)aBuffer & 0xf) == 0);
 		SOLOUD_ASSERT(((size_t)aScratch & 0xf) == 0);
 		SOLOUD_ASSERT(((size_t)aBufferSize & 0xf) == 0);
@@ -1151,7 +1145,7 @@ namespace SoLoud
 				}
 				break;
 			case 2: // 2->2
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 				{
 					int c = 0;
 					//if ((aBufferSize & 3) == 0)
@@ -1216,7 +1210,7 @@ namespace SoLoud
 #endif
 				break;
 			case 1: // 1->2
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 				{
 					int c = 0;
 					//if ((aBufferSize & 3) == 0)
@@ -1992,10 +1986,10 @@ namespace SoLoud
 		mActiveVoiceDirty = false;
 
 		// Populate
-		unsigned int i, candidates, mustlive;
+        unsigned int candidates, mustlive;
 		candidates = 0;
 		mustlive = 0;
-		for (i = 0; i < mHighestVoice; i++)
+        for (unsigned int i = 0; i < mHighestVoice; i++)
 		{
 			if (mVoice[i] && (!(mVoice[i]->mFlags & (AudioSourceInstance::INAUDIBLE | AudioSourceInstance::PAUSED)) || (mVoice[i]->mFlags & AudioSourceInstance::INAUDIBLE_TICK)))
 			{
@@ -2101,7 +2095,7 @@ namespace SoLoud
 		}
 #endif
 
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 		{
 			static bool once = false;
 			if (!once)
@@ -2119,7 +2113,7 @@ namespace SoLoud
 		}
 #endif
 
-		float buffertime = aSamples / (float)mSamplerate;
+        float buffertime = aSamples / static_cast<float>(mSamplerate);
 		float globalVolume[2];
 		mStreamTime += buffertime;
 		mLastClockedTime = 0;
@@ -2134,8 +2128,7 @@ namespace SoLoud
 		lockAudioMutex_internal();
 
 		// Process faders. May change scratch size.
-		int i;
-		for (i = 0; i < (signed)mHighestVoice; i++)
+        for (unsigned int i = 0; i < mHighestVoice; i++)
 		{
 			if (mVoice[i] && !(mVoice[i]->mFlags & AudioSourceInstance::PAUSED))
 			{
@@ -2203,7 +2196,7 @@ namespace SoLoud
 	
 		mixBus_internal(mOutputScratch.mData, aSamples, aStride, mScratch.mData, 0, (float)mSamplerate, mChannels, mResampler);
 
-		for (i = 0; i < FILTERS_PER_STREAM; i++)
+        for (int i = 0; i < FILTERS_PER_STREAM; i++)
 		{
 			if (mFilterInstance[i])
 			{
@@ -2219,13 +2212,13 @@ namespace SoLoud
 
 		if (mFlags & ENABLE_VISUALIZATION)
 		{
-			for (i = 0; i < MAX_CHANNELS; i++)
+            for (int i = 0; i < MAX_CHANNELS; i++)
 			{
 				mVisualizationChannelVolume[i] = 0;
 			}
 			if (aSamples > 255)
 			{
-				for (i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
 				{
 					int j;
 					mVisualizationWaveData[i] = 0;
@@ -2242,11 +2235,10 @@ namespace SoLoud
 			else
 			{
 				// Very unlikely failsafe branch
-				for (i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
 				{
-					int j;
 					mVisualizationWaveData[i] = 0;
-					for (j = 0; j < (signed)mChannels; j++)
+                    for (int j = 0; j < (signed)mChannels; j++)
 					{
 						float sample = mScratch.mData[(i % aSamples) + j * aStride];
 						float absvol = (float)fabs(sample);
@@ -2276,12 +2268,11 @@ namespace SoLoud
 	void interlace_samples_float(const float *aSourceBuffer, float *aDestBuffer, unsigned int aSamples, unsigned int aChannels, unsigned int aStride)
 	{
 		// 111222 -> 121212
-		unsigned int i, j, c;
-		c = 0;
-		for (j = 0; j < aChannels; j++)
+        unsigned int c{0};
+        for (unsigned int j = 0; j < aChannels; j++)
 		{
 			c = j * aStride;
-			for (i = j; i < aSamples * aChannels; i += aChannels)
+            for (unsigned int i = j; i < aSamples * aChannels; i += aChannels)
 			{
 				aDestBuffer[i] = aSourceBuffer[c];
 				c++;

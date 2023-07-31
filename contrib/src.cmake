@@ -28,6 +28,7 @@ set(SOLOUD_SOURCES)
 set(SOLOUD_CORE_SOURCE_DIR ${SOLOUD_SOURCE_PATH_DIR}/core)
 set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud.h
+	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_config.h
 	${SOLOUD_CORE_SOURCE_DIR}/soloud.cpp
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_audiosource.h
 	${SOLOUD_CORE_SOURCE_DIR}/soloud_audiosource.cpp
@@ -47,6 +48,7 @@ set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_dcremovalfilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_echofilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_error.h
+        ${SOLOUD_CORE_SOURCE_DIR}/soloud_error.cpp
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_fader.h
 	${SOLOUD_CORE_SOURCE_DIR}/soloud_fader.cpp
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_fft.h
@@ -62,6 +64,7 @@ set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_flangerfilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_internal.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_lofifilter.h
+        ${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_log.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_monotone.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_openmpt.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_queue.h
@@ -102,10 +105,20 @@ set(SOLOUD_AUDIOSOURCES_SOURCES
 	${SOLOUD_AUDIOSOURCES_DIR}/tedsid/ted.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/vic/soloud_vic.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/vizsn/soloud_vizsn.cpp
-	${SOLOUD_AUDIOSOURCES_DIR}/wav/dr_impl.cpp
+
 	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_wav.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_wavstream.cpp
-	${SOLOUD_AUDIOSOURCES_DIR}/wav/stb_vorbis.c
+	
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_threaded_loader.h
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/soloud_threaded_loader.cpp
+	
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/dr_impl.cpp
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/dr_flac.h
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/dr_mp3.h
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/dr_wav.h
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/stb_vorbis.h
+	${SOLOUD_AUDIOSOURCES_DIR}/wav/codecs/stb_vorbis.c
+
 	${SOLOUD_AUDIOSOURCES_DIR}/ay/chipplayer.cpp
 	${SOLOUD_AUDIOSOURCES_DIR}/ay/chipplayer.h
 	${SOLOUD_AUDIOSOURCES_DIR}/ay/sndbuffer.cpp
@@ -128,8 +141,11 @@ set (SOLOUD_FILTERS_SOURCES
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_bassboostfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_biquadresonantfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_dcremovalfilter.cpp
+	${SOLOUD_FILTERS_PATH_DIR}/soloud_duckfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_echofilter.cpp
+	${SOLOUD_FILTERS_PATH_DIR}/soloud_eqfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_fftfilter.cpp
+	${SOLOUD_FILTERS_PATH_DIR}/soloud_freeverbfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_flangerfilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_lofifilter.cpp
 	${SOLOUD_FILTERS_PATH_DIR}/soloud_robotizefilter.cpp
@@ -221,4 +237,5 @@ list(APPEND SOLOUD_SOURCES ${SOLOUD_BACKENDS_SOURCES})
 
 #Apply the source files
 apply_to_soloud_libraries(target_sources PUBLIC ${SOLOUD_SOURCES})
-apply_to_soloud_libraries(target_include_directories PUBLIC ${SOLOUD_ROOT_DIRECTORY}/include)
+apply_to_soloud_libraries(target_include_directories PUBLIC ${SOLOUD_ROOT_DIRECTORY}/include ${SOLOUD_ROOT_DIRECTORY}/src)
+apply_to_soloud_libraries(target_include_directories PRIVATE ${SOLOUD_ROOT_DIRECTORY}/src)

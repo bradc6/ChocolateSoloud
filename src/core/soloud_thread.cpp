@@ -188,17 +188,6 @@ namespace SoLoud
 			return 0;
 		}
 
-		ThreadHandle createThread(threadFunction aThreadFunction, void *aParameter)
-		{
-			soloud_thread_data *d = new soloud_thread_data;
-			d->mFunc = aThreadFunction;
-			d->mParam = aParameter;
-
-			ThreadHandleData *threadHandle = new ThreadHandleData;
-			pthread_create(&threadHandle->thread, NULL, threadfunc, (void*)d);
-            return threadHandle;
-		}
-
 		void sleep(int aMSec)
 		{
 			//usleep(aMSec * 1000);
@@ -226,9 +215,8 @@ namespace SoLoud
 		}
 #endif
 
-		static void poolWorker(void *aParam)
+        static void poolWorker(Pool *myPool)
 		{
-			Pool *myPool = (Pool*)aParam;
 			while (myPool->mRunning)
 			{
 				PoolTask *t = myPool->getWork();
@@ -245,10 +233,7 @@ namespace SoLoud
 
 		Pool::Pool()
 		{
-			mRunning = 0;
-			mThreadCount = 0;
-			mThread = 0;
-			mWorkMutex = 0;
+            mRunning = false;
 			mRobin = 0;
 			mMaxTask = 0;
 			for (int i = 0; i < MAX_THREADPOOL_TASKS; i++)
@@ -258,72 +243,79 @@ namespace SoLoud
 		Pool::~Pool()
 		{
 			mRunning = 0;
-			int i;
-			for (i = 0; i < mThreadCount; i++)
-			{
-				wait(mThread[i]);
-				release(mThread[i]);
-			}
-			delete[] mThread;
-			if (mWorkMutex)
-				destroyMutex(mWorkMutex);
+            for (auto &currentWorkerThread : mThread)
+                currentWorkerThread.join();
+
+            mThread.clear();
 		}
 
-		void Pool::init(int aThreadCount)
+        void Pool::init(int aThreadCount, const char* threadName /*= nullptr*/)
 		{
 			if (aThreadCount > 0)
 			{
 				mMaxTask = 0;
-				mWorkMutex = createMutex();
-				mRunning = 1;
-				mThreadCount = aThreadCount;
-				mThread = new ThreadHandle[aThreadCount];
-				int i;
-				for (i = 0; i < mThreadCount; i++)
-				{
-					mThread[i] = createThread(poolWorker, this);
-				}
+                mRunning = true;
+
+                mThread.reserve(aThreadCount);
+                for(size_t currentThreadToCreate = 0;
+                    currentThreadToCreate < aThreadCount;
+                    currentThreadToCreate++)
+                {
+                    mThread.emplace_back(poolWorker, this);
+#if !defined(WINDOWS_VERSION)
+                    if(threadName != nullptr)
+                    {
+                        constexpr unsigned int MAX_THREAD_NAME_LENGTH = 25;
+                        char generatedThreadName[MAX_THREAD_NAME_LENGTH];
+                        snprintf(generatedThreadName, MAX_THREAD_NAME_LENGTH, "%s%lu", threadName, currentThreadToCreate);
+                        int errorCode = pthread_setname_np(mThread.back().native_handle(), generatedThreadName);
+                    }
+#endif
+                }
+                mThread.shrink_to_fit();
 			}
 		}
 
 		void Pool::addWork(PoolTask *aTask)
 		{
-			if (mThreadCount == 0)
+            //Aka we're single threaded
+            if (mThread.empty())
 			{
 				aTask->work();
 			}
 			else
 			{
-				if (mWorkMutex) lockMutex(mWorkMutex);
+                std::lock_guard<std::mutex> addWorkLock(mWorkMutex);
 				if (mMaxTask == MAX_THREADPOOL_TASKS)
 				{
 					// If we're at max tasks, do the task on calling thread 
 					// (we're in trouble anyway, might as well slow down adding more work)
-					if (mWorkMutex) unlockMutex(mWorkMutex);
+                    assert(false); //You shouldn't be here to the point in debug you should crash out
 					aTask->work();
 				}
 				else
 				{
 					mTaskArray[mMaxTask] = aTask;
-					mMaxTask++;
-					if (mWorkMutex) unlockMutex(mWorkMutex);
+                    mMaxTask++;
 				}
 			}
 		}
 
 		PoolTask * Pool::getWork()
 		{
-			PoolTask *t = 0;
-			if (mWorkMutex) lockMutex(mWorkMutex);
-			if (mMaxTask > 0)
-			{
-				int r = mRobin % mMaxTask;
-				mRobin++;
-				t = mTaskArray[r];
-				mTaskArray[r] = mTaskArray[mMaxTask - 1];
-				mMaxTask--;
-			}
-			if (mWorkMutex) unlockMutex(mWorkMutex);
+            PoolTask* t{nullptr};
+            std::lock_guard<std::mutex> getWorkLock(mWorkMutex);
+
+            //If there is nothing to do... bail
+            if (!mMaxTask)
+                return t;
+
+            int r = mRobin % mMaxTask;
+            mRobin++;
+            t = mTaskArray[r];
+            mTaskArray[r] = mTaskArray[mMaxTask - 1];
+            mMaxTask--;
+
 			return t;
 		}
 	}
