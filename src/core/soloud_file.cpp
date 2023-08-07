@@ -205,7 +205,7 @@ mFileHandle(fp)
 		mOffset = 0;
 
 		DiskFile df;
-		int res = df.open(aFile);
+        result res = df.open(aFile);
 		if (res != SO_NO_ERROR)
 			return res;
 

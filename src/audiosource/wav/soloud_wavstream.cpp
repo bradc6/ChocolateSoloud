@@ -348,7 +348,7 @@ namespace SoLoud
 			mOffset = stb_vorbis_get_sample_offset(mCodec.mOgg);
 			double newPosition = float(mOffset / mBaseSamplerate);
 			mStreamPosition = newPosition;
-			return 0;
+            return SO_NO_ERROR;
 		}
 		else {
 			return AudioSourceInstance::seek(aSeconds, mScratch, mScratchSize);
@@ -386,16 +386,12 @@ namespace SoLoud
 		}
 		mOffset = 0;
 		mStreamPosition = 0.0f;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	bool WavStreamInstance::hasEnded()
 	{
-		if (mOffset >= mParent->mSampleCount)
-		{
-			return 1;
-		}
-		return 0;
+        return mOffset >= mParent->mSampleCount;
 	}
 
 	WavStream::WavStream()
@@ -462,7 +458,7 @@ namespace SoLoud
 
 		mSampleCount = samples;
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result WavStream::loadflac(File * fp)
@@ -519,7 +515,7 @@ namespace SoLoud
 		mFilename = 0;
 		mSampleCount = 0;
 		DiskFile fp;
-        int res = fp.open(aFilename);
+        result res = fp.open(aFilename);
 		if (res != SO_NO_ERROR)
 			return res;
 		
@@ -537,7 +533,7 @@ namespace SoLoud
 			return res;
 		}
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result WavStream::loadMem(const unsigned char *aData, unsigned int aDataLen, bool aCopy, bool aTakeOwnership)
@@ -553,7 +549,7 @@ namespace SoLoud
 			return INVALID_PARAMETER;
 
 		MemoryFile *mf = new MemoryFile();
-		int res = mf->openMem(aData, aDataLen, aCopy, aTakeOwnership);
+        result res = mf->openMem(aData, aDataLen, aCopy, aTakeOwnership);
 		if (res != SO_NO_ERROR)
 		{
 			delete mf;
@@ -570,13 +566,13 @@ namespace SoLoud
 
 		mMemFile = mf;
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result WavStream::loadToMem(const char *aFilename)
 	{
 		DiskFile df;
-		int res = df.open(aFilename);
+        result res = df.open(aFilename);
 		if (res == SO_NO_ERROR)
 		{
 			res = loadFileToMem(&df);
@@ -593,7 +589,7 @@ namespace SoLoud
 		mFilename = 0;
 		mSampleCount = 0;
 
-		int res = parse(aFile);
+        result res = parse(aFile);
 
 		if (res != SO_NO_ERROR)
 		{
@@ -602,7 +598,7 @@ namespace SoLoud
 
 		mStreamFile = aFile;
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result WavStream::loadFileToMem(File *aFile)
@@ -615,7 +611,7 @@ namespace SoLoud
 		mSampleCount = 0;
 
 		MemoryFile *mf = new MemoryFile();
-		int res = mf->openFileToMem(aFile);
+        result res = mf->openFileToMem(aFile);
 		if (res != SO_NO_ERROR)
 		{
 			delete mf;
@@ -639,7 +635,7 @@ namespace SoLoud
 	result WavStream::parse(File *aFile)
 	{
 		int tag = aFile->read32();
-		int res = SO_NO_ERROR;
+        result res = SO_NO_ERROR;
 		if (tag == MAKEDWORD('O', 'g', 'g', 'S'))
 		{
 			res = loadogg(aFile);

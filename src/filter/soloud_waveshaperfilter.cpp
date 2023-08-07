@@ -65,7 +65,7 @@ namespace SoLoud
 		if (aAmount < -1 || aAmount > 1)
 			return INVALID_PARAMETER;
 		mAmount = aAmount;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	WaveShaperFilter::WaveShaperFilter()

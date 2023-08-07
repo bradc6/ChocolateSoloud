@@ -243,6 +243,7 @@ namespace SoLoud
 		Pool::~Pool()
 		{
 			mRunning = 0;
+
             for (auto &currentWorkerThread : mThread)
                 currentWorkerThread.join();
 

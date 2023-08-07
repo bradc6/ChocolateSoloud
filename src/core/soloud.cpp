@@ -409,7 +409,7 @@ namespace SoLoud
 		{
 			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
 
-			int ret = alsa_init(this, aFlags, samplerate, buffersize, aChannels);
+            result ret = alsa_init(this, aFlags, samplerate, buffersize, aChannels);
 			if (ret == 0)
 			{
 				inited = 1;
@@ -448,7 +448,7 @@ namespace SoLoud
             if (aBufferSize == Soloud::AUTO)
                 buffersize = 2048;
 
-            int ret = pipewire_init(this, aFlags, samplerate, buffersize, aChannels);
+            result ret = pipewire_init(this, aFlags, samplerate, buffersize, aChannels);
             if (ret == 0)
             {
                 inited = 1;
@@ -579,7 +579,7 @@ namespace SoLoud
 		{
 			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
 
-			int ret = null_init(this, aFlags, samplerate, buffersize, aChannels);
+            result ret = null_init(this, aFlags, samplerate, buffersize, aChannels);
 			if (ret == 0)
 			{
 				inited = 1;
@@ -599,7 +599,7 @@ namespace SoLoud
 			return NOT_IMPLEMENTED;
 		if (!inited)
 			return UNKNOWN_ERROR;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result Soloud::pause()
@@ -1991,7 +1991,7 @@ namespace SoLoud
 		mustlive = 0;
         for (unsigned int i = 0; i < mHighestVoice; i++)
 		{
-			if (mVoice[i] && (!(mVoice[i]->mFlags & (AudioSourceInstance::INAUDIBLE | AudioSourceInstance::PAUSED)) || (mVoice[i]->mFlags & AudioSourceInstance::INAUDIBLE_TICK)))
+            if (mVoice[i] && (!(mVoice[i]->mFlags & (AudioSourceInstance::INAUDIBLE | AudioSourceInstance::PAUSED)) || (mVoice[i]->mFlags & AudioSourceInstance::INAUDIBLE_TICK)))
 			{
 				mActiveVoice[candidates] = i;
 				candidates++;
@@ -2236,7 +2236,7 @@ namespace SoLoud
 			{
 				// Very unlikely failsafe branch
                 for (int i = 0; i < 256; i++)
-				{
+                {
 					mVisualizationWaveData[i] = 0;
                     for (int j = 0; j < (signed)mChannels; j++)
 					{

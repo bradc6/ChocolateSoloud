@@ -362,7 +362,7 @@ namespace SoLoud
 	result Monotone::loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
 		MemoryFile mf;
-		int res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
+        result res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
 		if (res != SO_NO_ERROR)
 			return res;
 		return loadFile(&mf);
@@ -371,7 +371,7 @@ namespace SoLoud
 	result Monotone::load(const char *aFilename)
 	{
 		DiskFile df;
-		int res = df.open(aFilename);
+        result res = df.open(aFilename);
 		if (res != SO_NO_ERROR)
 			return res;
 		return loadFile(&df);

@@ -94,7 +94,7 @@ namespace SoLoud
 		mOffset = 10;
 		mSampleCount = 10;
 		mStreamPosition = 0.0f;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	bool SpeechInstance::hasEnded()
@@ -110,7 +110,7 @@ namespace SoLoud
 		mBaseSpeed = aBaseSpeed;
 		mBaseDeclination = aBaseDeclination;
 		mBaseWaveform = aBaseWaveform;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	result Speech::setText(const char *aText)
@@ -123,7 +123,7 @@ namespace SoLoud
 		darray phone;
 		xlate_string(aText, &phone);
 		mFrames = klatt::phone_to_elm(phone.getData(), phone.getSize(), &mElement);
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	Speech::Speech()

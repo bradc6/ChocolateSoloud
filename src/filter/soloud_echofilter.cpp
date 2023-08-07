@@ -100,7 +100,7 @@ namespace SoLoud
 		mDelay = aDelay;
 		mFilter = aFilter;
 		
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	int EchoFilter::getParamCount()

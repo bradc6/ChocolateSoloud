@@ -140,7 +140,7 @@ namespace SoLoud
 		if (!aMem || aLength == 0)
 			return INVALID_PARAMETER;
 		MemoryFile mf;
-		int res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
+        result res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
 		if (res != SO_NO_ERROR)
 		{
 			return res;
@@ -154,7 +154,7 @@ namespace SoLoud
 		if (!aFilename)
 			return INVALID_PARAMETER;
 		DiskFile df;
-		int res = df.open(aFilename);
+        result res = df.open(aFilename);
 		if (res != SO_NO_ERROR)
 		{
 			return res;

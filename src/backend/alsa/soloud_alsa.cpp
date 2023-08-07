@@ -157,7 +157,7 @@ namespace SoLoud
         data->threadHandle = std::thread(alsaThread, data);
         data->threadHandle.detach();
         aSoloud->mBackendString = "ALSA";
-        return 0;
+        return SO_NO_ERROR;
     }
 };
 #endif

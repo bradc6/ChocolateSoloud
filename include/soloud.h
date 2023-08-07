@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 #define SOLOUD_H
 
 #include "soloud_config.h"
+#include "soloud_error.h"
 
 #include <stdlib.h> // rand
 #include <math.h> // sin
@@ -83,7 +84,7 @@ namespace SoLoud
 	class Soloud;
 	typedef void (*mutexCallFunction)(void *aMutexPtr);
 	typedef void (*soloudCallFunction)(Soloud *aSoloud);
-	typedef unsigned int result;
+    using result = SOLOUD_ERRORCODE;
 	typedef result (*soloudResultFunction)(Soloud *aSoloud);
 	typedef unsigned int handle;
 	typedef double time;

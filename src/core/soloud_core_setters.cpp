@@ -47,7 +47,7 @@ namespace SoLoud
 
 	result Soloud::setRelativePlaySpeed(handle aVoiceHandle, float aSpeed)
 	{
-		result retVal = 0;
+        result retVal{SO_NO_ERROR};
 		FOR_ALL_VOICES_PRE
 			mVoice[ch]->mRelativePlaySpeedFader.mActive = 0;
 			retVal = setVoiceRelativePlaySpeed_internal(ch, aSpeed);

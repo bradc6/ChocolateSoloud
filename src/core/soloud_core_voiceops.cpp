@@ -43,7 +43,7 @@ namespace SoLoud
 			updateVoiceRelativePlaySpeed_internal(aVoice);
 		}
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	void Soloud::setVoicePause_internal(unsigned int aVoice, int aPause)

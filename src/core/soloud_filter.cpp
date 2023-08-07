@@ -94,7 +94,7 @@ namespace SoLoud
 		}
 		mParam[0] = 1; // set 'wet' to 1
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	void FilterInstance::updateParams(double aTime)

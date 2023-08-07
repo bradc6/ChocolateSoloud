@@ -511,7 +511,7 @@ namespace SoLoud
 		mDamp = aDamp;
 		mWidth = aWidth;
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	int FreeverbFilter::getParamCount()

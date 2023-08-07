@@ -108,8 +108,7 @@ namespace SoLoud
 	BusInstance::~BusInstance()
 	{
 		Soloud *s = mParent->mSoloud;
-		int i;
-		for (i = 0; i < (signed)s->mHighestVoice; i++)
+        for (int i = 0; i < (signed)s->mHighestVoice; i++)
 		{
 			if (s->mVoice[i] && s->mVoice[i]->mBusHandle == mParent->mChannelHandle)
 			{
