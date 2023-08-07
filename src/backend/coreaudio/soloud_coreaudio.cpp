@@ -35,7 +35,7 @@ freely, subject to the following restrictions:
 
 namespace SoLoud
 {
-	result coreaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
+    result coreaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
 	{
 		return NOT_IMPLEMENTED;
 	}

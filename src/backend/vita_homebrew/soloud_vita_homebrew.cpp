@@ -28,21 +28,22 @@ freely, subject to the following restrictions:
 #include "soloud.h"
 #include "soloud_thread.h"
 
-#include <psp2/audioout.h>
-#include <psp2/kernel/threadmgr.h>
-#include <stdio.h>
+
 
 #if !defined(WITH_VITA_HOMEBREW)
 
 namespace SoLoud
 {
-	result vita_homebrew_init(Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
+    result vita_homebrew_init(Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
 	{
 		return NOT_IMPLEMENTED;
 	}
 };
 
 #else
+#include <psp2/audioout.h>
+#include <psp2/kernel/threadmgr.h>
+#include <stdio.h>
 
 namespace SoLoud
 {

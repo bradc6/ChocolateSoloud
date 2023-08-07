@@ -48,7 +48,7 @@ set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_dcremovalfilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_echofilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_error.h
-        ${SOLOUD_CORE_SOURCE_DIR}/soloud_error.cpp
+	${SOLOUD_CORE_SOURCE_DIR}/soloud_error.cpp
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_fader.h
 	${SOLOUD_CORE_SOURCE_DIR}/soloud_fader.cpp
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_fft.h
@@ -64,7 +64,7 @@ set(SOLOUD_CORE_SOURCES
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_flangerfilter.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_internal.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_lofifilter.h
-        ${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_log.h
+	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_log.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_monotone.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_openmpt.h
 	${SOLOUD_PUBLIC_HEADERS_DIR}/soloud_queue.h
@@ -175,7 +175,65 @@ if(SOLOUD_ENABLE_BACKEND_NULL)
 	apply_to_soloud_libraries(target_compile_definitions PUBLIC WITH_NULL=1)
 endif()
 
-list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/sdl2_static/soloud_sdl2_static.cpp)
+#CoreAudio
+list(APPEND SOLOUD_BACKENDS_SOURCES
+	${SOLOUD_BACKENDS_SOURCE_DIR}/coreaudio/soloud_coreaudio.cpp
+	)
+
+#OpenAL
+list(APPEND SOLOUD_BACKENDS_SOURCES
+	${SOLOUD_BACKENDS_SOURCE_DIR}/openal/soloud_openal.cpp
+	${SOLOUD_BACKENDS_SOURCE_DIR}/openal/soloud_openal_dll.c
+	)
+
+#OpenSLES
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/opensles/soloud_opensles.cpp)
+
+#OSS
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/oss/soloud_oss.cpp)
+
+#PortAudio
+list(APPEND SOLOUD_BACKENDS_SOURCES 
+	${SOLOUD_BACKENDS_SOURCE_DIR}/portaudio/soloud_portaudio.cpp
+	${SOLOUD_BACKENDS_SOURCE_DIR}/portaudio/soloud_portaudio_dll.c
+	)
+
+#VitaHomebrew
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/vita_homebrew/soloud_vita_homebrew.cpp)
+
+#Jack
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/jack/soloud_jack.cpp)
+
+#null
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/null/soloud_null.cpp)
+
+#nosound
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/nosound/soloud_nosound.cpp)
+
+#miniaudio
+list(APPEND SOLOUD_BACKENDS_SOURCES
+	${SOLOUD_BACKENDS_SOURCE_DIR}/miniaudio/soloud_miniaudio.cpp
+	)
+
+#SDL
+list(APPEND SOLOUD_BACKENDS_SOURCES
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl/soloud_sdl1.cpp
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl/soloud_sdl1_dll.c
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl/soloud_sdl2.cpp
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl/soloud_sdl2_dll.c
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl_static/soloud_sdl_static.cpp
+	${SOLOUD_BACKENDS_SOURCE_DIR}/sdl2_static/soloud_sdl2_static.cpp
+	)
+
+#WinMM
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/winmm/soloud_winmm.cpp)
+
+#WASapi
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/wasapi/soloud_wasapi.cpp)
+
+#XAudio2
+list(APPEND SOLOUD_BACKENDS_SOURCES ${SOLOUD_BACKENDS_SOURCE_DIR}/xaudio2/soloud_xaudio2.cpp)
+
 if(SOLOUD_ENABLE_BACKEND_SDL2)
 	find_package (SDL2 REQUIRED)
 	apply_to_soloud_libraries(target_include_directories PUBLIC ${SDL2_INCLUDE_DIR})

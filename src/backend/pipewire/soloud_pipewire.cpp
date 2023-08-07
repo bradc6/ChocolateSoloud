@@ -26,7 +26,7 @@ freely, subject to the following restrictions:
 
 namespace SoLoud
 {
-    result sdl2static_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
+    result pipewire_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
     {
         return NOT_IMPLEMENTED;
     }
