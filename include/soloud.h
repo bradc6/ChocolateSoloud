@@ -127,7 +127,6 @@ namespace SoLoud
 #include "soloud_audiosource.h"
 #include "soloud_bus.h"
 #include "soloud_queue.h"
-#include "soloud_error.h"
 
 namespace SoLoud
 {
