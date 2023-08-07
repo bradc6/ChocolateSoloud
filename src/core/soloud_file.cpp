@@ -32,21 +32,21 @@ distribution.
 
 namespace SoLoud
 {
-	unsigned int File::read8()
+    uint8_t File::read8()
 	{
-		unsigned char d = 0;
+        uint8_t d = 0;
 		read((unsigned char*)&d, 1);
 		return d;
 	}
 
-	unsigned int File::read16()
+    uint16_t File::read16()
 	{
 		unsigned short d = 0;
 		read((unsigned char*)&d, 2);
 		return d;
 	}
 
-	unsigned int File::read32()
+    uint32_t File::read32()
 	{
 		unsigned int d = 0;
 		read((unsigned char*)&d, 4);
@@ -58,7 +58,6 @@ mFileHandle(fp)
 {
 
 }
-
 	unsigned int DiskFile::read(unsigned char *aDst, unsigned int aBytes)
 	{
 		return (unsigned int)fread(aDst, 1, aBytes, mFileHandle);
@@ -186,6 +185,7 @@ mFileHandle(fp)
 			mDataPtr = new unsigned char[aDataLength];
 			if (mDataPtr == NULL)
 				return OUT_OF_MEMORY;
+
 			memcpy((void *)mDataPtr, aData, aDataLength);
 			return SO_NO_ERROR;
 		}
@@ -205,7 +205,7 @@ mFileHandle(fp)
 		mOffset = 0;
 
 		DiskFile df;
-		int res = df.open(aFile);
+        result res = df.open(aFile);
 		if (res != SO_NO_ERROR)
 			return res;
 

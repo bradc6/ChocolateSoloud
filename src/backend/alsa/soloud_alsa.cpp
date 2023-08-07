@@ -44,6 +44,8 @@ namespace SoLoud
 #include <unistd.h>
 #include <string.h>
 
+#include <thread>
+
 namespace SoLoud
 {
     struct ALSAData
@@ -55,7 +57,7 @@ namespace SoLoud
         int samples = 0;
         int channels = 0;
         bool audioProcessingDone = false;
-        Thread::ThreadHandle threadHandle;
+        std::thread threadHandle;
     };
 
 
@@ -86,11 +88,8 @@ namespace SoLoud
         }
         ALSAData *data = static_cast<ALSAData*>(aSoloud->mBackendData);
         data->audioProcessingDone = true;
-        if (data->threadHandle)
-        {
-            Thread::wait(data->threadHandle);
-            Thread::release(data->threadHandle);
-        }
+        data->threadHandle.join();
+
         snd_pcm_drain(data->alsaDeviceHandle);
         snd_pcm_close(data->alsaDeviceHandle);
         if (0 != data->sampleBuffer)
@@ -154,14 +153,11 @@ namespace SoLoud
 
         data->buffer = new float[data->samples*data->channels];
         data->sampleBuffer = new short[data->samples*data->channels];
-        aSoloud->postinit(aSamplerate, data->samples * data->channels, aFlags, 2);
-        data->threadHandle = Thread::createThread(alsaThread, data);
-        if (0 == data->threadHandle)
-        {
-            return UNKNOWN_ERROR;
-        }
+        aSoloud->postinit_internal(aSamplerate, data->samples * data->channels, aFlags, 2);
+        data->threadHandle = std::thread(alsaThread, data);
+        data->threadHandle.detach();
         aSoloud->mBackendString = "ALSA";
-        return 0;
+        return SO_NO_ERROR;
     }
 };
 #endif

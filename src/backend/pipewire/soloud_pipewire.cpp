@@ -26,17 +26,17 @@ freely, subject to the following restrictions:
 
 namespace SoLoud
 {
-    result sdl2static_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
+    result pipewire_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
     {
         return NOT_IMPLEMENTED;
     }
 }
 
 #else
-#include "soloud_thread.h"
 
 #include "pipewire/pipewire.h"
 #include <spa/param/audio/format-utils.h>
+#include <array>
 
 namespace SoLoud
 {
@@ -46,10 +46,10 @@ namespace SoLoud
             PipeWireBackendState()
             {
                 m_PipewireParameterPODWrapper = spa_pod_builder();
-                m_PipewireParameterPODWrapper.data = m_PipewireParameterBuffer;
+                m_PipewireParameterPODWrapper.data = m_PipewireParameterBuffer.data();
                 m_PipewireParameterPODWrapper.size = c_PipewireParameterBufferSize;
 
-                m_PODParameters[0] = nullptr;
+                m_PODParameters.fill(nullptr);
             }
 
             ~PipeWireBackendState()
@@ -76,7 +76,7 @@ namespace SoLoud
             {
                 //Ensure that a previous stream is not already running
                 StopProcessing();
-                m_PipewireLoop = pw_thread_loop_new("SoLoud Pipewire Thread", nullptr);
+                m_PipewireLoop = pw_thread_loop_new("SoLoud Pipewire", nullptr);
                 m_PipewirePlaybackProperties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio",
                                                                  PW_KEY_MEDIA_CATEGORY, "Playback",
                                                                  PW_KEY_MEDIA_ROLE, "Game",
@@ -97,7 +97,7 @@ namespace SoLoud
                                   PW_DIRECTION_OUTPUT,
                                   PW_ID_ANY,
                                   static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS | PW_STREAM_FLAG_RT_PROCESS),
-                                  m_PODParameters,
+                                  m_PODParameters.data(),
                                   c_PODParametersSize);
 
                 pw_thread_loop_start(m_PipewireLoop);
@@ -119,7 +119,7 @@ namespace SoLoud
                     m_PipewireLoop = nullptr;
                 }
 
-                m_PODParameters[0] = nullptr;
+                m_PODParameters.fill(nullptr);
 
                 return true;
             }
@@ -168,7 +168,7 @@ namespace SoLoud
                 pipewireBuffer->buffer->datas[0].chunk->stride = stride;
                 pipewireBuffer->buffer->datas[0].chunk->size = numberOfFrames * stride;
 
-                int output = pw_stream_queue_buffer(soloudPipewireState->m_OutputAudioStream, pipewireBuffer);
+                pw_stream_queue_buffer(soloudPipewireState->m_OutputAudioStream, pipewireBuffer);
             }
 
             constexpr static const struct pw_stream_events cs_StreamSoloudData ={
@@ -187,7 +187,7 @@ namespace SoLoud
 
         protected:
             static const size_t c_PipewireParameterBufferSize = 1024;
-            uint8_t m_PipewireParameterBuffer[c_PipewireParameterBufferSize];
+            std::array<uint8_t, c_PipewireParameterBufferSize> m_PipewireParameterBuffer;
             struct spa_pod_builder m_PipewireParameterPODWrapper;
             struct pw_thread_loop *m_PipewireLoop{nullptr}; //Used to grab data to run
 
@@ -197,7 +197,7 @@ namespace SoLoud
             struct spa_audio_info_raw m_OutputAudioStreamInformation{};
 
             static const unsigned int c_PODParametersSize = 1;
-            const struct spa_pod* m_PODParameters[c_PODParametersSize];
+            std::array<const struct spa_pod*, c_PODParametersSize> m_PODParameters;
 
             Soloud* m_SoundLoadEngineInstance{nullptr};
             unsigned int m_DesiredBufferSize{0};

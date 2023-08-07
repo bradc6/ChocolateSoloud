@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
 
 #include "soloud.h"
 
-#define SOLOUD_QUEUE_MAX 32
+constexpr unsigned int SOLOUD_QUEUE_MAX  = 32;
 
 namespace SoLoud
 {
@@ -60,10 +60,10 @@ namespace SoLoud
 		result setParams(float aSamplerate, unsigned int aChannels = 2);
 		
 	public:
-	    unsigned int mReadIndex, mWriteIndex, mCount;
+        unsigned int mReadIndex{0}, mWriteIndex{0}, mCount{0};
 	    AudioSourceInstance *mSource[SOLOUD_QUEUE_MAX];
-		QueueInstance *mInstance;
-		handle mQueueHandle;
+        QueueInstance *mInstance{nullptr};
+        handle mQueueHandle{0};
 		void findQueueHandle();
 		
 	};

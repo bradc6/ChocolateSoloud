@@ -140,7 +140,7 @@ namespace SoLoud
 		if (!aMem || aLength == 0)
 			return INVALID_PARAMETER;
 		MemoryFile mf;
-		int res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
+        result res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
 		if (res != SO_NO_ERROR)
 		{
 			return res;
@@ -154,7 +154,7 @@ namespace SoLoud
 		if (!aFilename)
 			return INVALID_PARAMETER;
 		DiskFile df;
-		int res = df.open(aFilename);
+        result res = df.open(aFilename);
 		if (res != SO_NO_ERROR)
 		{
 			return res;
@@ -173,8 +173,11 @@ namespace SoLoud
 		if (aFile->length() < 34) return FILE_LOAD_FAILED;
 
 		aFile->seek(0);
-		if (aFile->read32() != 'PIHC') return FILE_LOAD_FAILED; // CHIP
-		if (aFile->read32() != 'ENUT') return FILE_LOAD_FAILED; // TUNE
+        if (aFile->read32() != 'PIHC')
+            return FILE_LOAD_FAILED; // CHIP
+        if (aFile->read32() != 'ENUT')
+            return FILE_LOAD_FAILED; // TUNE
+
 		int dataofs = aFile->read16();
 		int chiptype = aFile->read8();
 		// check if this file is for sid, ted, or combination of several

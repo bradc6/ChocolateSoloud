@@ -104,7 +104,7 @@ namespace SoLoud
 		mLevel = aLevel;
 		mSoloud = aSoloud;
 		
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	int DuckFilter::getParamCount()

@@ -26,12 +26,15 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <math.h> // sin
 #include <float.h> // _controlfp
+
+#include "soloud_config.h"
 #include "soloud_internal.h"
 #include "soloud_thread.h"
 #include "soloud_fft.h"
 
+#include "audiosource/wav/soloud_threaded_loader.h"
 
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 #include <xmmintrin.h>
 #ifdef _M_IX86
 #include <emmintrin.h>
@@ -66,7 +69,7 @@ namespace SoLoud
 		mBasePtr = 0;
 		mData = 0;
 		mFloats = aFloats;
-#ifndef SOLOUD_SSE_INTRINSICS
+#if !SOLOUD_SSE_INTRINSICS
 		mBasePtr = new unsigned char[aFloats * sizeof(float)];
 		if (mBasePtr == NULL)
 			return OUT_OF_MEMORY;
@@ -126,25 +129,26 @@ namespace SoLoud
 		mBackendID = 0;
 		mActiveVoiceDirty = true;
 		mActiveVoiceCount = 0;
-		int i;
-		for (i = 0; i < VOICE_COUNT; i++)
+
+        for (int i = 0; i < VOICE_COUNT; i++)
 			mActiveVoice[i] = 0;
-		for (i = 0; i < FILTERS_PER_STREAM; i++)
+
+        for (int i = 0; i < FILTERS_PER_STREAM; i++)
 		{
 			mFilter[i] = NULL;
 			mFilterInstance[i] = NULL;
 		}
-		for (i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
 		{
 			mFFTData[i] = 0;
 			mVisualizationWaveData[i] = 0;
 			mWaveData[i] = 0;
 		}
-		for (i = 0; i < MAX_CHANNELS; i++)
+        for (int i = 0; i < MAX_CHANNELS; i++)
 		{
 			mVisualizationChannelVolume[i] = 0;
 		}
-		for (i = 0; i < VOICE_COUNT; i++)
+        for (int i = 0; i < VOICE_COUNT; i++)
 		{
 			mVoice[i] = 0;
 		}
@@ -168,7 +172,7 @@ namespace SoLoud
 		mHighestVoice = 0;
 		mResampleData = NULL;
 		mResampleDataOwner = NULL;
-		for (i = 0; i < 3 * MAX_CHANNELS; i++)
+        for (int i = 0; i < 3 * MAX_CHANNELS; i++)
 			m3dSpeakerPosition[i] = 0;
 	}
 
@@ -191,6 +195,9 @@ namespace SoLoud
 
 	void Soloud::deinit()
 	{
+#if SOLOUD_FEATURE_THREADED_LOADER
+        ThreadedAssetLoader::Destroy();
+#endif
 		// Make sure no audio operation is currently pending
 		lockAudioMutex_internal();
 		unlockAudioMutex_internal();
@@ -205,7 +212,7 @@ namespace SoLoud
 	}
 
 	result Soloud::init(unsigned int aFlags, unsigned int aBackend, unsigned int aSamplerate, unsigned int aBufferSize, unsigned int aChannels)
-	{		
+	{
 		if (aBackend >= BACKEND_MAX || aChannels == 3 || aChannels == 5 || aChannels == 7 || aChannels > MAX_CHANNELS)
 			return INVALID_PARAMETER;
 
@@ -215,380 +222,93 @@ namespace SoLoud
 
 		mBackendID = 0;
 		mBackendString = 0;
+		bool inited = false;
 
-		int samplerate = 44100;
-		int buffersize = 2048;
-		int inited = 0;
 
-		if (aSamplerate != Soloud::AUTO) samplerate = aSamplerate;
-		if (aBufferSize != Soloud::AUTO) buffersize = aBufferSize;
 
-#if defined(WITH_SDL1_STATIC)
-		if (!inited &&
-			(aBackend == Soloud::SDL1 || 
-			aBackend == Soloud::AUTO))
+		constexpr const BACKENDS cInitializationOrder []
 		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
+			SDL1, //Static and then Dynamic
+			SDL2, //Static and then Dynamic
+			MINIAUDIO,
+			PORTAUDIO,
+			XAUDIO2,
+			WINMM,
+			WASAPI,
+			ALSA,
+			JACK,
+			PIPEWIRE,
+			OSS,
+			OPENAL,
+			OPENSLES,
+			COREAUDIO,
+			VITA_HOMEBREW,
+			NOSOUND,
+			NULLDRIVER,
+		};
+		constexpr unsigned int cInitializationOrderSize = sizeof(cInitializationOrder) / sizeof(cInitializationOrder[0]);
 
-			int ret = sdl1static_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
+		auto initializeBackend = [this](const BACKENDS currentBackend, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBufferSize, unsigned int aChannels)->SOLOUD_ERRORCODE
+		{
+			auto foundBankendInitializationInformation = scBackends.find(currentBackend);
+			if(foundBankendInitializationInformation == scBackends.end())
 			{
-				inited = 1;
-				mBackendID = Soloud::SDL1;
+				SOLOUD_ASSERT(false); //This should ALWAYS be found
+				return INVALID_PARAMETER;
 			}
 
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
+			const BackEndInitializationFunctionAndDefaults* targetBackend = &foundBankendInitializationInformation->second;
+			int channels = targetBackend->mChannels;
+			int samplerate = targetBackend->mSampleRate;
+			int buffersize = targetBackend->mBufferSize;
+			int flags = targetBackend->mFlags;
 
-#if defined(WITH_SDL2_STATIC)
-		if (!inited &&
-			(aBackend == Soloud::SDL2 ||
-			aBackend == Soloud::AUTO))
+			if (aSamplerate != Soloud::AUTO)
+				samplerate = aSamplerate;
+			if (aBufferSize != Soloud::AUTO)
+				buffersize = aBufferSize;
+			if (aChannels != Soloud::AUTO)
+				channels = aChannels;
+			if (aFlags != Soloud::AUTO)
+				flags = aFlags;
+
+			return targetBackend->mFunction(this, flags, samplerate, buffersize, channels);
+		};
+
+		if(aBackend == Soloud::AUTO)
 		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = sdl2static_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
+			for(unsigned int currentBackend = 0;
+				currentBackend < cInitializationOrderSize &&
+				!inited &&
+				aBackend == Soloud::AUTO;
+				currentBackend++)
 			{
-				inited = 1;
-				mBackendID = Soloud::SDL2;
+				if(initializeBackend(cInitializationOrder[currentBackend], aFlags, aSamplerate, aBufferSize, aChannels) == SO_NO_ERROR)
+				{
+					inited = true;
+					mBackendID = cInitializationOrder[currentBackend];
+				}
 			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;
 		}
-#endif
-
-#if defined(WITH_SDL2)
-		if (!inited &&
-			(aBackend == Soloud::SDL2 ||
-			aBackend == Soloud::AUTO))
+		else
 		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = sdl2_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
+			if(initializeBackend(static_cast<BACKENDS>(aBackend), aFlags, aSamplerate, aBufferSize, aChannels) == SO_NO_ERROR)
 			{
-				inited = 1;
-				mBackendID = Soloud::SDL2;
+				mBackendID = static_cast<BACKENDS>(aBackend);
+				inited = true;
 			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;
 		}
-#endif
-
-#if defined(WITH_SDL1)
-		if (!inited &&
-			(aBackend == Soloud::SDL1 || 
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = sdl1_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::SDL1;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_MINIAUDIO)
-		if (!inited &&
-			(aBackend == Soloud::MINIAUDIO ||
-				aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = miniaudio_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::MINIAUDIO;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;
-		}
-#endif
-
-#if defined(WITH_PORTAUDIO)
-		if (!inited &&
-			(aBackend == Soloud::PORTAUDIO ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = portaudio_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::PORTAUDIO;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_XAUDIO2)
-		if (!inited &&
-			(aBackend == Soloud::XAUDIO2 ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 4096;
-
-			int ret = xaudio2_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::XAUDIO2;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_WINMM)
-		if (!inited &&
-			(aBackend == Soloud::WINMM ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 4096;
-
-			int ret = winmm_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::WINMM;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_WASAPI)
-		if (!inited &&
-			(aBackend == Soloud::WASAPI ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 4096;
-			if (aSamplerate == Soloud::AUTO) samplerate = 48000;
-
-			int ret = wasapi_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::WASAPI;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_ALSA)
-		if (!inited &&
-			(aBackend == Soloud::ALSA ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = alsa_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::ALSA;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_JACK)
-		if (!inited &&
-			(aBackend == Soloud::JACK ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = jack_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::JACK;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_PIPEWIRE)
-        if (!inited &&
-            (aBackend == Soloud::PIPEWIRE ||
-            aBackend == Soloud::AUTO))
-        {
-            if (aBufferSize == Soloud::AUTO)
-                buffersize = 2048;
-
-            int ret = pipewire_init(this, aFlags, samplerate, buffersize, aChannels);
-            if (ret == 0)
-            {
-                inited = 1;
-                mBackendID = Soloud::PIPEWIRE;
-            }
-
-            if (ret != 0 && aBackend != Soloud::AUTO)
-                return ret;
-        }
-#endif
-
-#if defined(WITH_OSS)
-		if (!inited &&
-			(aBackend == Soloud::OSS ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = oss_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::OSS;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_OPENAL)
-		if (!inited &&
-			(aBackend == Soloud::OPENAL ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 4096;
-
-			int ret = openal_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::OPENAL;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_COREAUDIO)
-		if (!inited &&
-			(aBackend == Soloud::COREAUDIO ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = coreaudio_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::COREAUDIO;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_OPENSLES)
-		if (!inited &&
-			(aBackend == Soloud::OPENSLES ||
-			aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 4096;
-
-			int ret = opensles_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::OPENSLES;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_VITA_HOMEBREW)
-		if (!inited &&
-			(aBackend == Soloud::VITA_HOMEBREW || 
-			aBackend == Soloud::AUTO))
-		{
-			int ret = vita_homebrew_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::VITA_HOMEBREW;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;			
-		}
-#endif
-
-#if defined(WITH_NOSOUND)
-		if (!inited &&
-			(aBackend == Soloud::NOSOUND ||
-				aBackend == Soloud::AUTO))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = nosound_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::NOSOUND;
-			}
-
-			if (ret != 0 && aBackend != Soloud::AUTO)
-				return ret;
-		}
-#endif
 
 
-#if defined(WITH_NULL)
-		if (!inited &&
-			(aBackend == Soloud::NULLDRIVER))
-		{
-			if (aBufferSize == Soloud::AUTO) buffersize = 2048;
-
-			int ret = null_init(this, aFlags, samplerate, buffersize, aChannels);
-			if (ret == 0)
-			{
-				inited = 1;
-				mBackendID = Soloud::NULLDRIVER;
-			}
-
-			if (ret != 0)
-				return ret;			
-		}
+#if SOLOUD_FEATURE_THREADED_LOADER
+		ThreadedAssetLoader::Initialize();
 #endif
 
 		if (!inited && aBackend != Soloud::AUTO)
 			return NOT_IMPLEMENTED;
 		if (!inited)
 			return UNKNOWN_ERROR;
-		return 0;
+		return SO_NO_ERROR;
 	}
 
 	result Soloud::pause()
@@ -722,23 +442,6 @@ namespace SoLoud
 		}
 	}
 
-	const char * Soloud::getErrorString(result aErrorCode) const
-	{
-		switch (aErrorCode)
-		{
-		case SO_NO_ERROR: return "No error";
-		case INVALID_PARAMETER: return "Some parameter is invalid";
-		case FILE_NOT_FOUND: return "File not found";
-		case FILE_LOAD_FAILED: return "File found, but could not be loaded";
-		case DLL_NOT_FOUND: return "DLL not found, or wrong DLL";
-		case OUT_OF_MEMORY: return "Out of memory";
-		case NOT_IMPLEMENTED: return "Feature not implemented";
-		/*case UNKNOWN_ERROR: return "Other error";*/
-		}
-		return "Other error";
-	}
-
-
 	float * Soloud::getWave()
 	{
 		int i;
@@ -787,7 +490,7 @@ namespace SoLoud
 		return mFFTData;
 	}
 
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 	void Soloud::clip_internal(AlignedFloatBuffer &aBuffer, AlignedFloatBuffer &aDestBuffer, unsigned int aSamples, float aVolume0, float aVolume1)
 	{
 		float vd = (aVolume1 - aVolume0) / aSamples;
@@ -1072,7 +775,7 @@ namespace SoLoud
 
 	void panAndExpand(AudioSourceInstance *aVoice, float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize, float *aScratch, unsigned int aChannels)
 	{
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 		SOLOUD_ASSERT(((size_t)aBuffer & 0xf) == 0);
 		SOLOUD_ASSERT(((size_t)aScratch & 0xf) == 0);
 		SOLOUD_ASSERT(((size_t)aBufferSize & 0xf) == 0);
@@ -1151,7 +854,7 @@ namespace SoLoud
 				}
 				break;
 			case 2: // 2->2
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 				{
 					int c = 0;
 					//if ((aBufferSize & 3) == 0)
@@ -1216,7 +919,7 @@ namespace SoLoud
 #endif
 				break;
 			case 1: // 1->2
-#if defined(SOLOUD_SSE_INTRINSICS)
+#if SOLOUD_SSE_INTRINSICS
 				{
 					int c = 0;
 					//if ((aBufferSize & 3) == 0)
@@ -1992,12 +1695,12 @@ namespace SoLoud
 		mActiveVoiceDirty = false;
 
 		// Populate
-		unsigned int i, candidates, mustlive;
+        unsigned int candidates, mustlive;
 		candidates = 0;
 		mustlive = 0;
-		for (i = 0; i < mHighestVoice; i++)
+        for (unsigned int i = 0; i < mHighestVoice; i++)
 		{
-			if (mVoice[i] && (!(mVoice[i]->mFlags & (AudioSourceInstance::INAUDIBLE | AudioSourceInstance::PAUSED)) || (mVoice[i]->mFlags & AudioSourceInstance::INAUDIBLE_TICK)))
+            if (mVoice[i] && (!(mVoice[i]->mFlags & (AudioSourceInstance::INAUDIBLE | AudioSourceInstance::PAUSED)) || (mVoice[i]->mFlags & AudioSourceInstance::INAUDIBLE_TICK)))
 			{
 				mActiveVoice[candidates] = i;
 				candidates++;
@@ -2101,7 +1804,7 @@ namespace SoLoud
 		}
 #endif
 
-#ifdef SOLOUD_SSE_INTRINSICS
+#if SOLOUD_SSE_INTRINSICS
 		{
 			static bool once = false;
 			if (!once)
@@ -2119,7 +1822,7 @@ namespace SoLoud
 		}
 #endif
 
-		float buffertime = aSamples / (float)mSamplerate;
+        float buffertime = aSamples / static_cast<float>(mSamplerate);
 		float globalVolume[2];
 		mStreamTime += buffertime;
 		mLastClockedTime = 0;
@@ -2134,8 +1837,7 @@ namespace SoLoud
 		lockAudioMutex_internal();
 
 		// Process faders. May change scratch size.
-		int i;
-		for (i = 0; i < (signed)mHighestVoice; i++)
+        for (unsigned int i = 0; i < mHighestVoice; i++)
 		{
 			if (mVoice[i] && !(mVoice[i]->mFlags & AudioSourceInstance::PAUSED))
 			{
@@ -2203,7 +1905,7 @@ namespace SoLoud
 	
 		mixBus_internal(mOutputScratch.mData, aSamples, aStride, mScratch.mData, 0, (float)mSamplerate, mChannels, mResampler);
 
-		for (i = 0; i < FILTERS_PER_STREAM; i++)
+        for (int i = 0; i < FILTERS_PER_STREAM; i++)
 		{
 			if (mFilterInstance[i])
 			{
@@ -2219,13 +1921,13 @@ namespace SoLoud
 
 		if (mFlags & ENABLE_VISUALIZATION)
 		{
-			for (i = 0; i < MAX_CHANNELS; i++)
+            for (int i = 0; i < MAX_CHANNELS; i++)
 			{
 				mVisualizationChannelVolume[i] = 0;
 			}
 			if (aSamples > 255)
 			{
-				for (i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
 				{
 					int j;
 					mVisualizationWaveData[i] = 0;
@@ -2242,11 +1944,10 @@ namespace SoLoud
 			else
 			{
 				// Very unlikely failsafe branch
-				for (i = 0; i < 256; i++)
-				{
-					int j;
+                for (int i = 0; i < 256; i++)
+                {
 					mVisualizationWaveData[i] = 0;
-					for (j = 0; j < (signed)mChannels; j++)
+                    for (int j = 0; j < (signed)mChannels; j++)
 					{
 						float sample = mScratch.mData[(i % aSamples) + j * aStride];
 						float absvol = (float)fabs(sample);
@@ -2276,12 +1977,11 @@ namespace SoLoud
 	void interlace_samples_float(const float *aSourceBuffer, float *aDestBuffer, unsigned int aSamples, unsigned int aChannels, unsigned int aStride)
 	{
 		// 111222 -> 121212
-		unsigned int i, j, c;
-		c = 0;
-		for (j = 0; j < aChannels; j++)
+        unsigned int c{0};
+        for (unsigned int j = 0; j < aChannels; j++)
 		{
 			c = j * aStride;
-			for (i = j; i < aSamples * aChannels; i += aChannels)
+            for (unsigned int i = j; i < aSamples * aChannels; i += aChannels)
 			{
 				aDestBuffer[i] = aSourceBuffer[c];
 				c++;

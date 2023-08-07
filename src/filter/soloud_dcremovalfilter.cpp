@@ -99,7 +99,7 @@ namespace SoLoud
 
         mLength = aLength;
 		
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 

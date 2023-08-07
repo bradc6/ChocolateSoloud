@@ -98,7 +98,7 @@ namespace SoLoud
 		mDelay = aDelay;
 		mFreq = aFreq;
 		
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	int FlangerFilter::getParamCount()

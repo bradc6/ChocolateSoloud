@@ -469,7 +469,7 @@ namespace SoLoud
 			mParams.p_hpf_freq=0.1f;
 			break;
 		}
-		return 0;
+        return SO_NO_ERROR;
 	}
 	
 	void Sfxr::resetParams()
@@ -514,7 +514,7 @@ namespace SoLoud
 	result Sfxr::loadParamsMem(unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
 		MemoryFile mf;
-		int res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
+        result res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
 		if (res != SO_NO_ERROR)
 			return res;
 		return loadParamsFile(&mf);
@@ -523,7 +523,7 @@ namespace SoLoud
 	result Sfxr::loadParams(const char *aFilename)
 	{
 		DiskFile df;
-		int res = df.open(aFilename);
+        result res = df.open(aFilename);
 		if (res != SO_NO_ERROR)
 			return res;
 		return loadParamsFile(&df);
@@ -531,7 +531,7 @@ namespace SoLoud
 
 	result Sfxr::loadParamsFile(File *aFile)
 	{
-		int version=0;
+        int version = 0;
 		aFile->read((unsigned char*)&version, sizeof(int));
 		if(version!=100 && version!=101 && version!=102)
 		{
@@ -580,7 +580,7 @@ namespace SoLoud
 			aFile->read((unsigned char*)&mParams.p_arp_mod, sizeof(float));
 		}
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	Sfxr::~Sfxr()

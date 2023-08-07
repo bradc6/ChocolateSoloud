@@ -33,7 +33,7 @@ namespace SoLoud
 {
 	class AudioSource;	
 	class AudioSourceInstance;
-	class AudioSourceInstance3dData;
+    class AudioSourceInstance3dData;
 
 	class AudioCollider
 	{
@@ -114,14 +114,14 @@ namespace SoLoud
 			PROCESS_3D = 8,
 			// This audio instance has listener-relative 3d coordinates
 			LISTENER_RELATIVE = 16,
-			// Currently inaudible
+            // Currently inaudible
 			INAUDIBLE = 32,
 			// If inaudible, should be killed (default = don't kill kill)
 			INAUDIBLE_KILL = 64,
 			// If inaudible, should still be ticked (default = pause)
 			INAUDIBLE_TICK = 128,
 			// Don't auto-stop sound
-			DISABLE_AUTOSTOP = 256
+            DISABLE_AUTOSTOP = 256,
 		};
 		// Ctor
 		AudioSourceInstance();

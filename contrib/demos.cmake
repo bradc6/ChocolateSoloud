@@ -8,6 +8,7 @@ set(SOLOUD_DEMO_COMMON ${SOLOUD_DEMO_DIRECTORY}/common)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL)
+find_package(SDL2 REQUIRED)
 
 set(SOLOUD_DEMO_GLEW_DIR ${SOLOUD_DEMO_COMMON}/glew/GL)
 set(SOLOUD_DEMO_GLEW_SOURCES
@@ -41,8 +42,8 @@ set(SOLOUD_DEMO_FRAMEWORK_SOURCES
 	${SOLOUD_DEMO_COMMON}/stb_image.h
 	)
 add_library(soloud-demo-framework STATIC ${SOLOUD_DEMO_FRAMEWORK_SOURCES})
-target_include_directories(soloud-demo-framework PUBLIC ${SOLOUD_DEMO_COMMON})
-target_link_libraries(soloud-demo-framework PUBLIC soloud-imgui soloud-demo-glew OpenGL::GL)
+target_include_directories(soloud-demo-framework PUBLIC ${SOLOUD_DEMO_COMMON} ${SDL2_INCLUDE_DIRS})
+target_link_libraries(soloud-demo-framework PUBLIC soloud-imgui soloud-demo-glew OpenGL::GL ${SDL2_LIBRARY})
 
 ##############################
 #Demos
@@ -53,8 +54,8 @@ add_executable(simplest ${SOLOUD_DEMO_DIRECTORY}/simplest/main.cpp)
 target_link_libraries(simplest PUBLIC soloud)
 
 #C API test
-add_executable(ctest ${SOLOUD_DEMO_DIRECTORY}/c_test/main.c)
-target_link_libraries(ctest PUBLIC soloud)
+#add_executable(ctest ${SOLOUD_DEMO_DIRECTORY}/c_test/main.c)
+#target_link_libraries(ctest PUBLIC soloud)
 
 #Welcome
 add_executable(welcome ${SOLOUD_DEMO_DIRECTORY}/welcome/main.cpp)
@@ -79,14 +80,17 @@ set(SOLOUD_DEMO_PIANO_SOURCES
 	${SOLOUD_DEMO_PIANO_SOURCE_DIR}/soloud_padsynth.cpp
 	${SOLOUD_DEMO_PIANO_SOURCE_DIR}/soloud_padsynth.h
 	)
-add_executable(piano ${SOLOUD_DEMO_PIANO_SOURCES})
-target_link_libraries(piano PUBLIC soloud soloud-demo-framework)
+#add_executable(piano ${SOLOUD_DEMO_PIANO_SOURCES})
+#target_link_libraries(piano PUBLIC soloud soloud-demo-framework)
 
 #MegaDemo
 set(SOLOUD_DEMO_MEGADEMO_SOURCE_DIR ${SOLOUD_DEMO_DIRECTORY}/megademo)
 set(SOLOUD_DEMO_MEGADEMO_SOURCES
 		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/3dtest.cpp
 		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/main.cpp
+		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/ay.cpp
+		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/annex.cpp
+		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/filterfolio.cpp
 		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/mixbusses.cpp
 		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/monotone.cpp
 		${SOLOUD_DEMO_MEGADEMO_SOURCE_DIR}/multimusic.cpp

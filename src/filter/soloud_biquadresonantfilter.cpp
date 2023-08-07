@@ -162,7 +162,7 @@ namespace SoLoud
 		mFrequency = aFrequency;
 		mResonance = aResonance;
 
-		return 0;
+        return SO_NO_ERROR;
 	}
 
 	int BiquadResonantFilter::getParamCount()

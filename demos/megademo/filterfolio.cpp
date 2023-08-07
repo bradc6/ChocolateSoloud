@@ -203,7 +203,7 @@ namespace filterfolio
 			if (filterindex != 0)
 				ImGui::Separator();
 
-			char* label[4] = { "Filter 1", "Filter 2", "Filter 3", "Filter 4" };
+            const char* label[4] = { "Filter 1", "Filter 2", "Filter 3", "Filter 4" };
 
 			if (ImGui::Combo(label[filterindex], &gFilterSelect[filterindex],
 				"None\x00"

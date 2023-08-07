@@ -80,12 +80,10 @@ namespace SoLoud
 
 		mSampleRate = aSampleRate;
 		mBitdepth = aBitdepth;
-		return 0;
+        return SO_NO_ERROR;
 	}
 
-	LofiFilter::~LofiFilter()
-	{
-	}
+    LofiFilter::~LofiFilter() = default;
 
 	int LofiFilter::getParamCount()
 	{

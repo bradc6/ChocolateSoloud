@@ -26,65 +26,215 @@ freely, subject to the following restrictions:
 #define SOLOUD_INTERNAL_H
 
 #include "soloud.h"
+#include <unordered_map>
 
 namespace SoLoud
 {
-	// SDL1 back-end initialization call
-	result sdl1_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+    result sdl1_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result sdl2_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result sdl2static_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result openal_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result coreaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result opensles_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result portaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result winmm_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result xaudio2_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result wasapi_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result oss_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result vita_homebrew_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result alsa_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result pipewire_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result jack_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result miniaudio_init(SoLoud::Soloud* aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result nosound_init(SoLoud::Soloud* aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    result null_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
 
-	// SDL2 back-end initialization call
-	result sdl2_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+    typedef result (SoloudBackEndInitializationFunction)(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels);
+    struct BackEndInitializationFunctionAndDefaults
+    {
+        unsigned int mFlags{0};
+        unsigned int mSampleRate{0};
+        unsigned int mBufferSize{0};
+        unsigned int mChannels{0};
+        SoloudBackEndInitializationFunction* mFunction{nullptr};
+    };
 
-	// SDL1 "non-dynamic" back-end initialization call
-	result sdl1static_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+    static const std::unordered_map<Soloud::BACKENDS, BackEndInitializationFunctionAndDefaults> scBackends =
+    {
+        {Soloud::SDL1,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = sdl1_init
+         }
+        },
 
-	// SDL2 "non-dynamic" back-end initialization call
-	result sdl2static_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::SDL2,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+         #if WITH_SDL2_STATIC
+             .mFunction = sdl2static_init
+         #else
+             .mFunction = sdl2_init
+         #endif
+         }
+        },
 
-	// OpenAL back-end initialization call
-	result openal_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::OPENAL,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = openal_init
+         }
+        },
 
-	// Core Audio driver back-end initialization call
-	result coreaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::COREAUDIO,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = coreaudio_init
+         }
+        },
 
-	// OpenSL ES back-end initialization call
-	result opensles_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::OPENSLES,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = opensles_init
+         }
+        },
 
-	// PortAudio back-end initialization call
-	result portaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::PORTAUDIO,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = portaudio_init
+         }
+        },
 
-	// WinMM back-end initialization call
-	result winmm_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 4096, unsigned int aChannels = 2);
+        {Soloud::WINMM,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 4096,
+             .mChannels = 2,
+             .mFunction = winmm_init
+         }
+        },
 
-	// XAudio2 back-end initialization call
-	result xaudio2_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::XAUDIO2,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = xaudio2_init
+         }
+        },
 
-	// WASAPI back-end initialization call
-	result wasapi_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 4096, unsigned int aChannels = 2);
+        {Soloud::WASAPI,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 4096,
+             .mChannels = 2,
+             .mFunction = wasapi_init
+         }
+        },
 
-	// OSS back-end initialization call
-	result oss_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::OSS,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = oss_init
+         }
+        },
 
-	// PS Vita homebrew back-end initialization call	
-	result vita_homebrew_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::VITA_HOMEBREW,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = vita_homebrew_init
+         }
+        },
 
-	// ALSA back-end initialization call
-	result alsa_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::ALSA,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = alsa_init
+         }
+        },
 
-    // PipeWire back-end initialization call
-    result pipewire_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::PIPEWIRE,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = pipewire_init
+         }
+        },
 
-	// JACK back-end initialization call
-	result jack_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::JACK,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = jack_init
+         }
+        },
 
-	// MiniAudio back-end initialization call
-	result miniaudio_init(SoLoud::Soloud* aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::MINIAUDIO,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = miniaudio_init
+         }
+        },
 
-	// nosound back-end initialization call
-	result nosound_init(SoLoud::Soloud* aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::NOSOUND,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = nosound_init
+         }
+        },
 
-	// null driver back-end initialization call
-	result null_init(SoLoud::Soloud *aSoloud, unsigned int aFlags = Soloud::CLIP_ROUNDOFF, unsigned int aSamplerate = 44100, unsigned int aBuffer = 2048, unsigned int aChannels = 2);
+        {Soloud::NULLDRIVER,
+         {
+             .mFlags = Soloud::CLIP_ROUNDOFF,
+             .mSampleRate = 44100,
+             .mBufferSize = 2048,
+             .mChannels = 2,
+             .mFunction = null_init
+         }
+        },
+    };
 
 	// Interlace samples in a buffer. From 11112222 to 12121212
 	void interlace_samples_float(const float *aSourceBuffer, float *aDestBuffer, unsigned int aSamples, unsigned int aChannels, unsigned int aStride);
