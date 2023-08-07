@@ -186,6 +186,7 @@ namespace SoLoud
 			WASAPI,
 			ALSA,
 			JACK,
+            PIPEWIRE,
 			OSS,
 			OPENAL,
 			COREAUDIO,
